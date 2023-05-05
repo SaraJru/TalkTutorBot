@@ -1,0 +1,24 @@
+# Ignorar el directorio .vscode
+.vscode/
+
+# Ignorar archivos de respaldo de Vim
+*~
+
+# Ignorar archivos de registro
+*.log
+
+# Ignorar archivos compilados de Java
+*.class
+
+# Ignorar archivos de configuración de sistema
+.DS_Store
+Thumbs.db
+
+# Ignorar archivos de caché de Node.js
+node_modules/
+
+# Ignorar el archivo de credenciales de AWS
+.aws/credentials
+
+# Ignorar archivos de entornos virtuales de Python
+venv/
