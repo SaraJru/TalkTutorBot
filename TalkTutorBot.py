@@ -4,10 +4,12 @@ import logging
 from telegram.ext import (CommandHandler, MessageHandler, filters,  Application,
                            ContextTypes, ConversationHandler, CallbackQueryHandler, CallbackContext)
 from googletrans import Translator
-
 from telegram.constants import ParseMode
-
 import random
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 import tracemalloc
 tracemalloc.start()
@@ -262,14 +264,13 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def main():
-    dp = Application.builder().token("6055757522:AAEqyK31hZb4ATIs4oeRHnTwlnWjLqQnm-I").build()
+    key = os.getenv('API_KEY')
+    dp = Application.builder().token(key).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSING: [
-                # MessageHandler(filters.TEXT, check_respuesta),
-                # MessageHandler(filters.TEXT, practica),
                 MessageHandler(filters.Regex("^(Gramática)$"), gramatica),
                 MessageHandler(filters.Regex("^(Vocabulario básico)$"), vocabulario),
                 MessageHandler(filters.Regex("^(Práctica)$"), practica),
