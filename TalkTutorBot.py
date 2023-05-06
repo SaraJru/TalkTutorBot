@@ -2,8 +2,10 @@ from typing import Dict
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from telegram.ext import (CommandHandler, MessageHandler, filters,  Application,
-                           ContextTypes, ConversationHandler, CallbackQueryHandler)
+                           ContextTypes, ConversationHandler, CallbackQueryHandler, CallbackContext)
 from googletrans import Translator
+
+from PIL import ImageFont
 
 import tracemalloc
 tracemalloc.start()
@@ -23,13 +25,6 @@ reply_keyboard = [
     ["Done"],
 ]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-
-
-# async def start(update, context):
-#     await update.message.reply_text(
-#         "Hola! ¿En qué puedo ayudarte?", reply_markup=markup
-#     )
-#     return CHOOSING
 
 async def start(update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -52,28 +47,32 @@ async def vocabulario(update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [
             InlineKeyboardButton("Hola", callback_data="hola"),
-            InlineKeyboardButton("Gato nene", callback_data="Gato nene"),
+            InlineKeyboardButton("Buenos días", callback_data="Buenos días"),
+            InlineKeyboardButton("Disculpa", callback_data="Disculpa"),
+            InlineKeyboardButton("¡Genial!", callback_data="¡Genial!"),
         ],
-        [InlineKeyboardButton("¿Como estas?", callback_data="¿Como estas?")],
+        [InlineKeyboardButton("¿Qué hora es?", callback_data="¿Qué hora es?")],
+        [InlineKeyboardButton("¿En qué puedo ayudarte?", callback_data="¿En qué puedo ayudarte?")],
+        [InlineKeyboardButton("Inteligencia artificial", callback_data="Inteligencia artificial")],
+        [InlineKeyboardButton("¿Podrías repetir eso, por favor?", callback_data="¿Podrías repetir eso, por favor?")],
     ]
-
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Empecemos. ¿Qué palabra te gustaría aprender hoy? Puedes escribir la palabra o seleccionarla de la lista:"
         ,reply_markup = reply_markup)
-    
 
-async def options(update, context):
+
+async def vocabulario_options(update, context):
     query = update.callback_query
     await query.answer()
     option_selected = query.data
 
     # Llamar a la función "selected_option" para manejar la selección del usuario
-    next_state = await selected_option(update, context, option_selected)
+    next_state = await vocabulario_selected_option(update, context, option_selected)
 
     return next_state
 
-async def selected_option(update, context, option_selected):
+async def vocabulario_selected_option(update, context, option_selected):
     # Crear un objeto Translator
     translator = Translator()
 
@@ -99,81 +98,74 @@ async def selected_option(update, context, option_selected):
     return CHOOSING
 
 
-
-# async def selected_option(update, context, option_selected):
-#     # Crear un objeto Translator
-#     translator = Translator()
-
-#     # Traducir el texto al inglés
-#     translated_text = translator.translate(str(option_selected), src="es", dest="en")
-
-#     # Crear el teclado de opciones
-#     keyboard = [
-#         [
-#             InlineKeyboardButton("Gramática", callback_data="Gramática"),
-#             InlineKeyboardButton("Vocabulario básico", callback_data="Vocabulario básico"),
-#         ],
-#         [
-#             InlineKeyboardButton("Práctica", callback_data="Práctica"),
-#             InlineKeyboardButton("Recursos adicionales", callback_data="Recursos adicionales"),
-#         ],
-#         [InlineKeyboardButton("Done", callback_data="Done")],
-#     ]
-
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-
-#     # Actualizar el mensaje
-#     await update.callback_query.edit_message_text(
-#         text=f"La palabra que seleccionaste se traduce como: {translated_text.text}\n\n¿En qué más puedo ayudarte?",
-#         reply_markup=reply_markup
-#     )
-
-#     # Retornar al menú principal
-#     return CHOOSING
-
-
-
-# async def options(update, context: ContextTypes.DEFAULT_TYPE):
-#     # Crear un objeto Translator
-#     translator = Translator()
-#     # Traducir un texto al inglés
-#     if update.message:
-#         query = update.message.callback_query
-#         await query.answer()
-#         option_selected = query.data
-#     elif update.callback_query:
-#         query = update.callback_query
-#         await query.answer()
-#         option_selected = query.data
-#     else:
-#         return
-
-#     # query = update.callback_query
-#     # await query.answer()
-#     # option_selected = query.data
-#     translated_text = translator.translate(str(option_selected), src="es", dest="en")
-
-#     # await query.edit_message_text(text=f"La palabra que seleccionaste se traduce como: {translated_text.text}")
-
-#      # Editar el mensaje con la traducción
-#     await query.edit_message_text(text=f"La palabra que seleccionaste se traduce como: {translated_text.text}")
-
-#     # Retornar al menú principal
-#     return await start(update, context)
-
-#     # await query.edit_message_text(
-#     #     text=f"La palabra que seleccionaste se traduce como: {translated_text.text}",
-#     #     disable_notification=True  # Evita que se muestre automáticamente el mensaje del start
-#     # )
-    
-#     # return CHOOSING
-
-
-
 async def gramatica(update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("")
+    keyboard = [
+        [InlineKeyboardButton(text="Uso de verbos regulares e irregulares", callback_data="verbos")],
+        [InlineKeyboardButton(text="Uso de adjetivos", callback_data="adjetivos")],
+        [InlineKeyboardButton(text="Uso de pronombres", callback_data="pronombres")],
+        [InlineKeyboardButton(text="Uso de preposiciones", callback_data="preposiciones")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Seleccione una opción para conocer más acerca de la gramática:", reply_markup=reply_markup)
 
-    return TYPING_REPLY
+
+async def gramatica_options(update, context):
+    query = update.callback_query
+    await query.answer()
+    option_selected = query.data
+
+    # Llamar a la función "selected_option" para manejar la selección del usuario
+    next_state = await gramatica_selected_option(update, context, option_selected)
+
+    return next_state
+
+async def gramatica_selected_option(update, context, option_selected):
+    text = ""
+    if option_selected == "verbos":
+        text = "Los verbos en inglés se utilizan para expresar acciones, estados o procesos. Hay dos tipos de verbos: regulares e irregulares. Los verbos regulares forman el pasado y participio pasado añadiendo -ed al infinitivo, mientras que los verbos irregulares tienen formas especiales que no siguen este patrón. Algunos ejemplos de verbos regulares son walked (caminó), talked (habló), played (jugó), mientras que algunos ejemplos de verbos irregulares son go (ir), eat (comer), swim (nadar)."
+    elif option_selected == "adjetivos":
+        text = "Los adjetivos en inglés se utilizan para describir o calificar a los sustantivos. Normalmente, los adjetivos se colocan antes del sustantivo que modifican. Algunos ejemplos de adjetivos en inglés son happy (feliz), sad (triste), big (grande), small (pequeño)."
+    elif option_selected == "pronombres":
+        text = "Los pronombres en inglés se utilizan en lugar de los sustantivos para evitar repetir los mismos nombres una y otra vez. Algunos ejemplos de pronombres en inglés son I (yo), you (tú), he (él), she (ella), we (nosotros), they (ellos)."
+    elif option_selected == "preposiciones":
+        text = "Las preposiciones en inglés se utilizan para establecer relaciones entre sustantivos, pronombres y otras palabras en una oración. Algunos ejemplos de preposiciones en inglés son in (en), on (sobre), under (debajo), above (encima), below (debajo)."
+    elif option_selected == "menu":
+        # Si se selecciona la opción "Volver al menú principal", se llama a la función start
+       if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text="Hola! ¿En qué puedo ayudarte?",
+            reply_markup=markup
+        )
+    else:
+        # Si se selecciona una opción inválida, mostrar un mensaje de error
+        text = "Lo siento, opción inválida. Por favor, selecciona una opción válida."
+    # Responder al usuario con el texto en español
+    await update.callback_query.edit_message_text(
+        text=f"{text}"
+    )
+
+    # Enviar el mensaje del menú principal
+    if update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        keyboard = [
+            [InlineKeyboardButton(text="Uso de verbos regulares e irregulares", callback_data="verbos")],
+            [InlineKeyboardButton(text="Uso de adjetivos", callback_data="adjetivos")],
+            [InlineKeyboardButton(text="Uso de pronombres", callback_data="pronombres")],
+            [InlineKeyboardButton(text="Uso de preposiciones", callback_data="preposiciones")],
+            [InlineKeyboardButton(text="Volver al menú principal", callback_data="menu")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Selecciona una opción:",
+            reply_markup=reply_markup
+        )
+   
+
 
 async def practica(update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Aquí hay algunos ejercicios interactivos para que puedas practicar:")
@@ -231,11 +223,17 @@ def main():
     )
 
     dp.add_handler(conv_handler)
-    dp.add_handler(CallbackQueryHandler(options))
+    dp.add_handler(CallbackQueryHandler(vocabulario_options))
+    dp.add_handler(CallbackQueryHandler(gramatica_selected_option))
+
+
+
+    
 
 
 
     dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+
     
     # Correr el bot hasta que se presione Ctrl-C
     dp.run_polling()
