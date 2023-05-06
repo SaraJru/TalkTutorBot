@@ -5,6 +5,10 @@ from telegram.ext import (CommandHandler, MessageHandler, filters,  Application,
                            ContextTypes, ConversationHandler, CallbackQueryHandler, CallbackContext)
 from googletrans import Translator
 
+from telegram.constants import ParseMode
+
+import random
+
 import tracemalloc
 tracemalloc.start()
 
@@ -15,7 +19,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
+
+RESPUESTA = 5
 
 reply_keyboard = [
     ["Gramática", "Vocabulario básico"],
@@ -76,14 +83,14 @@ def traductor(option):
 
     # Traducir el texto al inglés
     translated_text = translator.translate(str(option), src="es", dest="en")
-    
+
     return translated_text
 
 async def vocabulario_selected_option(update, context, option_selected):
-    
+
     #Invocamos método para traducir:
     translated_text = traductor(option_selected)
-    
+
     # Responder al usuario con la traducción
     await update.callback_query.edit_message_text(
         text=f"La palabra que seleccionaste se traduce como: {translated_text.text}"
@@ -136,14 +143,8 @@ async def gramatica_selected_option(update, context, option_selected):
         text = "Las preposiciones en inglés se utilizan para establecer relaciones entre sustantivos, pronombres y otras palabras en una oración. Algunos ejemplos de preposiciones en inglés son in (en), on (sobre), under (debajo), above (encima), below (debajo)."
     elif option_selected == "menu":
         # Si se selecciona la opción "Volver al menú principal", se llama a la función start
-       if update.callback_query:
-        query = update.callback_query
-        await query.answer()
-        await context.bot.send_message(
-            chat_id=query.message.chat_id,
-            text="Hola! ¿En qué puedo ayudarte?",
-            reply_markup=markup
-        )
+       text = "Menu principal"
+       
     else:
         # Si se selecciona una opción inválida, mostrar un mensaje de error
         text = "Lo siento, opción inválida. Por favor, selecciona una opción válida."
@@ -152,32 +153,94 @@ async def gramatica_selected_option(update, context, option_selected):
         text=f"{text}"
     )
 
+    if text == "Menu principal":
+        if update.callback_query:
+            query = update.callback_query
+            await query.answer()
+            await context.bot.send_message(
+                chat_id=query.message.chat_id,
+                text="Hola! ¿En qué puedo ayudarte?",
+                reply_markup=markup
+            )
+    else:
+
     # Enviar el mensaje del menú principal
-    if update.callback_query:
-        query = update.callback_query
-        await query.answer()
-        keyboard = [
-            [InlineKeyboardButton(text="Uso de verbos regulares e irregulares", callback_data="verbos")],
-            [InlineKeyboardButton(text="Uso de adjetivos", callback_data="adjetivos")],
-            [InlineKeyboardButton(text="Uso de pronombres", callback_data="pronombres")],
-            [InlineKeyboardButton(text="Uso de preposiciones", callback_data="preposiciones")],
-            [InlineKeyboardButton(text="Volver al menú principal", callback_data="menu")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="Selecciona una opción:",
-            reply_markup=reply_markup
-        )
+        if update.callback_query:
+            query = update.callback_query
+            await query.answer()
+            keyboard = [
+                [InlineKeyboardButton(text="Uso de verbos regulares e irregulares", callback_data="verbos")],
+                [InlineKeyboardButton(text="Uso de adjetivos", callback_data="adjetivos")],
+                [InlineKeyboardButton(text="Uso de pronombres", callback_data="pronombres")],
+                [InlineKeyboardButton(text="Uso de preposiciones", callback_data="preposiciones")],
+                [InlineKeyboardButton(text="Volver al menú principal", callback_data="menu")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Selecciona una opción:",
+                reply_markup=reply_markup
+            )
     return CHOOSING
 
-async def practica(update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Aquí hay algunos ejercicios interactivos para que puedas practicar:")
-    # Agregar los ejercicios interactivos aquí
+async def practica(update, context):
+    # Definir una lista de preguntas y respuestas en formato (pregunta, respuesta)
+    preguntas_respuestas = [
+        ("¿Cómo se dice 'hola' en inglés?", "hello"),
+        ("¿Cómo se dice 'buenos días' en inglés?", "good morning"),
+        ("Traduce 'perro' al inglés", "dog"),
+        ("Traduce 'gato' al inglés", "cat"),
+        ("¿Cómo se dice 'adiós' en inglés?", "goodbye"),
+        ("¿Cómo se dice 'buenas tardes' en inglés?", "good afternoon"),
+    ]
 
-async def recursos(update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Aquí hay algunos recursos adicionales para ayudarte a mejorar tus habilidades en el idioma:")
-    # Agregar los recursos adicionales aquí
+    # Elegir aleatoriamente una pregunta y su respuesta
+    pregunta, respuesta = random.choice(preguntas_respuestas)
+
+    # Guardar la respuesta correcta en el contexto
+    context.user_data["respuesta_correcta"] = respuesta
+
+     # Preguntar al usuario la pregunta elegida
+    await update.message.reply_text(pregunta)
+
+
+
+    return RESPUESTA
+
+
+
+async def check_respuesta(update, context):
+    # Obtener la respuesta ingresada por el usuario
+    respuesta_usuario = update.message.text
+
+    # Obtener la respuesta correcta guardada en el contexto
+    respuesta_correcta = context.user_data["respuesta_correcta"]
+
+    # Comparar la respuesta del usuario con la respuesta correcta
+    if respuesta_usuario.lower() == respuesta_correcta:
+        mensaje = "¡Correcto! 🎉"
+    else:
+        mensaje = "Respuesta incorrecta 😔 La respuesta correcta era: " + respuesta_correcta
+
+    # Responder al usuario con el mensaje correspondiente
+    await update.message.reply_text(mensaje, reply_markup=markup)
+
+
+    return CHOOSING
+
+
+async def recursos(update, context):
+    message = "Aquí hay algunos recursos adicionales para ayudarte a mejorar tus habilidades en el idioma:\n\n" \
+              "📚 [Duolingo](https://www.duolingo.com/): Una plataforma de aprendizaje de idiomas en línea y gratuita.\n\n" \
+              "🎥 [Netflix](https://www.netflix.com/): Una plataforma de streaming con una gran cantidad de películas y series en el idioma que deseas aprender.\n\n" \
+              "🎧 [LingQ](https://www.lingq.com/): Una aplicación que te permite escuchar y leer artículos y libros en el idioma que deseas aprender.\n\n" \
+              "📖 [Librivox](https://librivox.org/): Una plataforma de audiolibros en varios idiomas, incluyendo el que deseas aprender.\n\n" \
+              "🎤 [Italki](https://www.italki.com/): Una plataforma de intercambio de idiomas donde puedes conectarte con hablantes nativos del idioma que deseas aprender.\n\n"
+
+    # Enviar el mensaje con los recursos adicionales
+    await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN, reply_markup=markup)
+
+    return CHOOSING
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Echo the user message."""
@@ -190,7 +253,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         del user_data["choice"]
 
     await update.message.reply_text(
-        f"I learned these facts about you: {facts_to_str(user_data)}Until next time!",
+        "Hasta la proxima!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -199,12 +262,14 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def main():
-    dp = Application.builder().token("").build()
-    
+    dp = Application.builder().token("6055757522:AAEqyK31hZb4ATIs4oeRHnTwlnWjLqQnm-I").build()
+
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSING: [
+                # MessageHandler(filters.TEXT, check_respuesta),
+                # MessageHandler(filters.TEXT, practica),
                 MessageHandler(filters.Regex("^(Gramática)$"), gramatica),
                 MessageHandler(filters.Regex("^(Vocabulario básico)$"), vocabulario),
                 MessageHandler(filters.Regex("^(Práctica)$"), practica),
@@ -213,11 +278,13 @@ def main():
                 CallbackQueryHandler(gramatica_options, pattern="^" + "verbos|adjetivos|pronombres|preposiciones|menu" + "$"),
                 CallbackQueryHandler(vocabulario_options, pattern="^" + "hola|Buenos días|Disculpa|¡Genial!|¿Qué hora es?|¿En qué puedo ayudarte?|Inteligencia artificial|¿Podrías repetir eso, por favor?" + "$"),
             ],
-            TYPING_CHOICE: [
-                
+
+            RESPUESTA: [
+                MessageHandler(filters.TEXT, check_respuesta),
+
             ],
             TYPING_REPLY: [
-            
+
             ],
         },
         fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
