@@ -1,2 +1,3 @@
 googletrans_py==4.0.0
 python-telegram-bot==20.2
+python-dotenv
