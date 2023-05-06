@@ -5,8 +5,6 @@ from telegram.ext import (CommandHandler, MessageHandler, filters,  Application,
                            ContextTypes, ConversationHandler, CallbackQueryHandler, CallbackContext)
 from googletrans import Translator
 
-from PIL import ImageFont
-
 import tracemalloc
 tracemalloc.start()
 
@@ -72,13 +70,20 @@ async def vocabulario_options(update, context):
 
     return next_state
 
-async def vocabulario_selected_option(update, context, option_selected):
+def traductor(option):
     # Crear un objeto Translator
     translator = Translator()
 
     # Traducir el texto al inglés
-    translated_text = translator.translate(str(option_selected), src="es", dest="en")
+    translated_text = translator.translate(str(option), src="es", dest="en")
+    
+    return translated_text
 
+async def vocabulario_selected_option(update, context, option_selected):
+    
+    #Invocamos método para traducir:
+    translated_text = traductor(option_selected)
+    
     # Responder al usuario con la traducción
     await update.callback_query.edit_message_text(
         text=f"La palabra que seleccionaste se traduce como: {translated_text.text}"
@@ -120,7 +125,7 @@ async def gramatica_options(update, context):
     return next_state
 
 async def gramatica_selected_option(update, context, option_selected):
-    text = ""
+    text = "Retornando"
     if option_selected == "verbos":
         text = "Los verbos en inglés se utilizan para expresar acciones, estados o procesos. Hay dos tipos de verbos: regulares e irregulares. Los verbos regulares forman el pasado y participio pasado añadiendo -ed al infinitivo, mientras que los verbos irregulares tienen formas especiales que no siguen este patrón. Algunos ejemplos de verbos regulares son walked (caminó), talked (habló), played (jugó), mientras que algunos ejemplos de verbos irregulares son go (ir), eat (comer), swim (nadar)."
     elif option_selected == "adjetivos":
@@ -164,8 +169,7 @@ async def gramatica_selected_option(update, context, option_selected):
             text="Selecciona una opción:",
             reply_markup=reply_markup
         )
-   
-
+    return CHOOSING
 
 async def practica(update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Aquí hay algunos ejercicios interactivos para que puedas practicar:")
@@ -195,7 +199,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def main():
-    dp = Application.builder().token("6055757522:AAEqyK31hZb4ATIs4oeRHnTwlnWjLqQnm-I").build()
+    dp = Application.builder().token("").build()
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -206,35 +210,23 @@ def main():
                 MessageHandler(filters.Regex("^(Práctica)$"), practica),
                 MessageHandler(filters.Regex("^(Recursos adicionales)$"), recursos),
                 MessageHandler(filters.Regex("^(done)$"), done),
+                CallbackQueryHandler(gramatica_options, pattern="^" + "verbos|adjetivos|pronombres|preposiciones|menu" + "$"),
+                CallbackQueryHandler(vocabulario_options, pattern="^" + "hola|Buenos días|Disculpa|¡Genial!|¿Qué hora es?|¿En qué puedo ayudarte?|Inteligencia artificial|¿Podrías repetir eso, por favor?" + "$"),
             ],
             TYPING_CHOICE: [
-                MessageHandler(
-                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Done$")), vocabulario
-                )
+                
             ],
             TYPING_REPLY: [
-                MessageHandler(
-                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Done$")),
-                    practica,
-                )
+            
             ],
         },
         fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
     )
 
     dp.add_handler(conv_handler)
-    dp.add_handler(CallbackQueryHandler(vocabulario_options))
-    dp.add_handler(CallbackQueryHandler(gramatica_selected_option))
-
-
-
-    
-
-
 
     dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
-    
     # Correr el bot hasta que se presione Ctrl-C
     dp.run_polling()
 
