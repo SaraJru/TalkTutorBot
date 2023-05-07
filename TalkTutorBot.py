@@ -244,6 +244,30 @@ async def recursos(update, context):
 
     return CHOOSING
 
+
+async def traducir(update, context):
+    # Obtener la frase ingresada por el usuario
+    frase = " ".join(context.args)
+
+    # Crear un objeto de la clase Translator
+    translator = Translator()
+
+    idioma_detectado = translator.detect(frase)
+    
+    if idioma_detectado.lang is None:
+        respuesta = "No pude detectar el idioma de la frase. Por favor, inténtalo de nuevo con una frase más clara o más larga."
+    else:
+       # Definir el idioma de origen y de destino
+        idioma_origen = "es"
+        idioma_destino = "en"
+
+        # Traducir la frase
+        frase_traducida = translator.translate(frase, src=idioma_origen, dest=idioma_destino).text
+
+        # Responder al usuario con la traducción
+        respuesta = f"La traducción de '{frase}' es '{frase_traducida}'"
+    await update.message.reply_text(respuesta)
+
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Echo the user message."""
     await update.message.reply_text(update.message.text)
@@ -294,6 +318,8 @@ def main():
     dp.add_handler(conv_handler)
 
     dp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+
+    dp.add_handler(CommandHandler('traducir', traducir))
 
     # Correr el bot hasta que se presione Ctrl-C
     dp.run_polling()
